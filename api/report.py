@@ -29,7 +29,7 @@ def create_notion_report(report_data):
     for cat in report_data.get('categories', []):
         categories.append({"name": cat})
     
-    # Build the page properties
+    # Build the page properties (matching Notion database schema)
     properties = {
         "Report ID": {"title": [{"text": {"content": report_id}}]},
         "Status": {"select": {"name": "New"}},
@@ -37,9 +37,16 @@ def create_notion_report(report_data):
         "Notes": {"rich_text": [{"text": {"content": report_data.get('notes', '')[:2000]}}]},
         "Image Title": {"rich_text": [{"text": {"content": report_data.get('imageTitle', '')[:200]}}]},
         "Image Notion ID": {"rich_text": [{"text": {"content": report_data.get('imageId', '')}}]},
-        "Weather Shown": {"rich_text": [{"text": {"content": report_data.get('weatherShown', '')}}]},
-        "Time of Day": {"rich_text": [{"text": {"content": report_data.get('timeOfDay', '')}}]},
     }
+    
+    # Add optional select fields only if values provided
+    weather = report_data.get('weatherShown', '')
+    if weather:
+        properties["Weather Shown"] = {"select": {"name": weather}}
+    
+    time_of_day = report_data.get('timeOfDay', '')
+    if time_of_day:
+        properties["Time of Day"] = {"select": {"name": time_of_day}}
     
     payload = {
         "parent": {"database_id": REPORTS_DATABASE_ID},
