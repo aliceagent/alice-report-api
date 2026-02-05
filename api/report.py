@@ -50,25 +50,25 @@ def create_notion_report(report_data):
     # Build the page properties (matching Notion database schema)
     properties = {
         "Report ID": {"title": [{"text": {"content": report_id}}]},
-        "Status": {"status": {"name": "New"}},
+        "Status": {"select": {"name": "New"}},
         "Categories": {"multi_select": categories},
         "Notes": {"rich_text": [{"text": {"content": report_data.get('notes', '')[:2000]}}]},
         "Image Title": {"rich_text": [{"text": {"content": image_title[:200]}}]},
         "Image Notion ID": {"rich_text": [{"text": {"content": image_id}}]},
     }
     
-    # Add optional select fields only if values provided
+    # Add optional fields (rich_text for weather/style, select for time)
     if weather_shown:
-        properties["Weather Shown"] = {"select": {"name": weather_shown}}
+        properties["Weather Shown"] = {"rich_text": [{"text": {"content": weather_shown}}]}
     
     if time_of_day:
         properties["Time of Day"] = {"select": {"name": time_of_day}}
     
     if actual_weather:
-        properties["Actual Weather"] = {"select": {"name": actual_weather}}
+        properties["Actual Weather"] = {"rich_text": [{"text": {"content": actual_weather}}]}
     
     if image_style:
-        properties["Art Style"] = {"select": {"name": image_style}}
+        properties["Art Style"] = {"rich_text": [{"text": {"content": image_style}}]}
     
     payload = {
         "parent": {"database_id": REPORTS_DATABASE_ID},
