@@ -24,6 +24,24 @@ def create_notion_report(report_data):
     
     report_id = generate_report_id()
     
+    # Handle both flat and nested data formats
+    # Website sends: { image_data: {...}, context_data: {...}, categories: [...], notes: "..." }
+    # Simple API sends: { imageTitle: "...", categories: [...], notes: "..." }
+    
+    image_data = report_data.get('image_data', {})
+    context_data = report_data.get('context_data', {})
+    
+    # Extract image info (prefer nested, fall back to flat)
+    image_title = image_data.get('title', '') or report_data.get('imageTitle', '')
+    image_id = image_data.get('notion_id', '') or report_data.get('imageId', '')
+    image_style = image_data.get('style', '')
+    
+    # Extract context info
+    weather_shown = context_data.get('weather_shown', '') or report_data.get('weatherShown', '')
+    time_of_day = context_data.get('time_of_day', '') or report_data.get('timeOfDay', '')
+    actual_weather = context_data.get('actual_weather', '')
+    weather_mismatch = context_data.get('weather_mismatch', False)
+    
     # Build categories multi-select
     categories = []
     for cat in report_data.get('categories', []):
@@ -32,21 +50,25 @@ def create_notion_report(report_data):
     # Build the page properties (matching Notion database schema)
     properties = {
         "Report ID": {"title": [{"text": {"content": report_id}}]},
-        "Status": {"select": {"name": "New"}},
+        "Status": {"status": {"name": "New"}},
         "Categories": {"multi_select": categories},
         "Notes": {"rich_text": [{"text": {"content": report_data.get('notes', '')[:2000]}}]},
-        "Image Title": {"rich_text": [{"text": {"content": report_data.get('imageTitle', '')[:200]}}]},
-        "Image Notion ID": {"rich_text": [{"text": {"content": report_data.get('imageId', '')}}]},
+        "Image Title": {"rich_text": [{"text": {"content": image_title[:200]}}]},
+        "Image Notion ID": {"rich_text": [{"text": {"content": image_id}}]},
     }
     
     # Add optional select fields only if values provided
-    weather = report_data.get('weatherShown', '')
-    if weather:
-        properties["Weather Shown"] = {"select": {"name": weather}}
+    if weather_shown:
+        properties["Weather Shown"] = {"select": {"name": weather_shown}}
     
-    time_of_day = report_data.get('timeOfDay', '')
     if time_of_day:
         properties["Time of Day"] = {"select": {"name": time_of_day}}
+    
+    if actual_weather:
+        properties["Actual Weather"] = {"select": {"name": actual_weather}}
+    
+    if image_style:
+        properties["Art Style"] = {"select": {"name": image_style}}
     
     payload = {
         "parent": {"database_id": REPORTS_DATABASE_ID},
